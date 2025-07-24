@@ -17,80 +17,94 @@ struct HistoryView: View {
     let columns = Array(repeating: GridItem(.flexible()), count: 7)
     
     var body: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Button(action: { changeMonth(by: -1) }) {
-                    Image(systemName: "chevron.left")
-                }
-                
-                Spacer()
-                
-                Text(monthYearString(from: currentDate))
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                
-                Spacer()
-                
-                Button(action: { changeMonth(by: 1) }) {
-                    Image(systemName: "chevron.right")
-                }
-            }
-            .padding(.horizontal)
-            
-            LazyVGrid(columns: columns) {
-                ForEach(weekdaySymbols(), id: \.self) { day in
-                    Text(day)
-                        .font(.caption)
-                        .frame(maxWidth: .infinity)
-                        .foregroundColor(.gray)
-                }
-            }
-            
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(daysInMonth(for: currentDate), id: \.self) { date in
-                    if let date = date {
-                        Button(action: {
-                            selectedDate = date
-                        }) {
-                            Text("\(calendar.component(.day, from: date))")
-                                .frame(maxWidth: .infinity, minHeight: 40)
-                                .background(isSameDay(date1: date, date2: selectedDate) ? Color.blue : Color.clear)
-                                .foregroundColor(isSameDay(date1: date, date2: selectedDate) ? .white : .black)
-                                .clipShape(Circle())
-                        }
-                    } else {
-                        // 空格
-                        Text("")
-                            .frame(maxWidth: .infinity, minHeight: 40)
+        NavigationView {
+            VStack(spacing: 16) {
+                HStack {
+                    Button(action: { changeMonth(by: -1) }) {
+                        Image(systemName: "chevron.left")
+                    }
+                    
+                    Spacer()
+                    
+                    Text(monthYearString(from: currentDate))
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                    
+                    Button(action: { changeMonth(by: 1) }) {
+                        Image(systemName: "chevron.right")
                     }
                 }
+                .padding(.horizontal)
+                
+                LazyVGrid(columns: columns) {
+                    ForEach(weekdaySymbols(), id: \.self) { day in
+                        Text(day)
+                            .font(.caption)
+                            .frame(maxWidth: .infinity)
+                            .foregroundColor(.gray)
+                    }
+                }
+                
+                LazyVGrid(columns: columns, spacing: 10) {
+                    ForEach(daysInMonth(for: currentDate), id: \.self) { date in
+                        if let date = date {
+                            Button(action: {
+                                selectedDate = date
+                            }) {
+                                Text("\(calendar.component(.day, from: date))")
+                                    .frame(maxWidth: .infinity, minHeight: 40)
+                                    .background(isSameDay(date1: date, date2: selectedDate) ? Color.blue : Color.clear)
+                                    .foregroundColor(isSameDay(date1: date, date2: selectedDate) ? .white : .black)
+                                    .clipShape(Circle())
+                            }
+                        } else {
+                            // 空格
+                            Text("")
+                                .frame(maxWidth: .infinity, minHeight: 40)
+                        }
+                    }
+                }
+                .padding()
+                
+                if let selectedDate = selectedDate {
+                    Text("📅 \(formattedDate(selectedDate)) 的紀錄")
+                        .font(.headline)
+                    
+                    List {
+                        ForEach(store.records(for: selectedDate)) { record in
+                            HStack {
+                                Text("🛒 \(record.name)")
+                                
+                                Spacer()
+                                
+                                Text("💰 NT$\(String(format: "%.0f", record.amount))")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                
+                                Text("📍 \(record.location)")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                        .onDelete(perform: delete)
+                    }
+                    .frame(height: 200)
+                }
+                
+                Spacer()
             }
             .padding()
-            
-            if let selectedDate = selectedDate {
-                Text("📅 \(formattedDate(selectedDate)) 的紀錄")
-                    .font(.headline)
-                
-                List {
-                    ForEach(store.records(for: selectedDate)) { record in
-                        HStack {
-                            Text("🛒 \(record.name)")
-                            Spacer()
-                            Text("💰 NT$\(String(format: "%.0f", record.amount))")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
-                    }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    EditButton()
                 }
-                .frame(height: 200)
             }
-            
-            Spacer()
         }
     }
     
     // MARK: - 日期方法
-    
     func daysInMonth(for date: Date) -> [Date?] {
         guard let range = calendar.range(of: .day, in: .month, for: date),
               let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date))
@@ -142,6 +156,14 @@ struct HistoryView: View {
         let sunday = symbols.removeFirst()
         symbols.append(sunday)
         return symbols
+    }
+    
+    func delete(at offsets: IndexSet) {
+        let records = store.records(for: selectedDate!)
+        for index in offsets {
+            let record = records[index]
+            store.delete(record)
+        }
     }
 }
 

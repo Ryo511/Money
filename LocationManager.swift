@@ -9,10 +9,11 @@ import CoreLocation
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
+    private let geocoder = CLGeocoder()
     
     @Published var location: CLLocation?
     @Published var placeName: String = ""
-
+    
     override init() {
         super.init()
         locationManager.delegate = self
@@ -20,16 +21,24 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
     }
-
+    
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let latestLocation = locations.first else { return }
         self.location = latestLocation
         
-        let geocoder = CLGeocoder()
-        geocoder.reverseGeocodeLocation(latestLocation) { placemarks, error in
+        locationManager.stopUpdatingLocation()
+        
+        geocoder.reverseGeocodeLocation(latestLocation) { [weak self] placemarks, error in
+            guard let self = self else { return }
             if let place = placemarks?.first {
-                self.placeName = place.name ?? "不明地點"
+                DispatchQueue.main.async {
+                    self.placeName = place.name ?? "不明地點"
+                }
             }
         }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("定位失敗: \(error.localizedDescription)")
     }
 }

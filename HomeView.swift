@@ -18,6 +18,7 @@ struct HomeView: View {
     @State private var amount: String = ""
     @StateObject var locationmanager = LocationManager()
     @State private var locationNote: String = ""
+    @State private var isEditlocation: Bool = false
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 16) {
@@ -63,7 +64,9 @@ struct HomeView: View {
                 
                 Text("地點: ")
                     .font(.headline)
-                TextField("目前地點", text: $locationNote)
+                TextField("目前地點", text: $locationNote, onEditingChanged: { editing in
+                    isEditlocation = editing
+                })
                     .textFieldStyle(.roundedBorder)
                     .onReceive(locationmanager.$placeName) { newPlace in
                             // 只有當 locationNote 是空的才自動填入（避免覆蓋使用者手動修改）
@@ -71,6 +74,11 @@ struct HomeView: View {
                                 locationNote = newPlace
                             }
                         }
+                    .onAppear {
+                        if locationNote.isEmpty {
+                            locationNote = locationmanager.placeName
+                        }
+                    }
                 
                 Text("選擇日期：")
                     .font(.headline)
@@ -82,12 +90,16 @@ struct HomeView: View {
                     if let amountValue = Double(amount),
                        !itemName.trimmingCharacters(in: .whitespaces).isEmpty {
                         store.addRecord(name: itemName, date: selectedDate, category: selectedCategory, amount: amountValue, location: locationNote)
-                        itemName = "" // 清空輸入欄
-                        amount = ""
-//                        selectedDate = Date() // 回到今天
-                        locationNote = ""
                         
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                            itemName = "" // 清空輸入欄
+                            amount = ""
+    //                        selectedDate = Date() // 回到今天
+                            locationNote = ""
+                        
+                            locationNote = locationmanager.placeName
+                            
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        
                     }
                 }) {
                     Text("新增紀錄")

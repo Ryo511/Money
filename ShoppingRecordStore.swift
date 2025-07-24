@@ -27,4 +27,10 @@ class ShoppingRecordStore: ObservableObject {
         let calendar = Calendar.current
         return records.filter { calendar.isDate($0.date, inSameDayAs: date) }
     }
+    
+    func delete(_ record: ShoppingRecord) {
+        if let index = records.firstIndex(where: { $0.id == record.id }) {
+            records.remove(at: index)
+        }
+    }
 }
