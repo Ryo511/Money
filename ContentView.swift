@@ -21,11 +21,16 @@ struct ContentView: View {
                     .tabItem {
                         Label("History", systemImage: "clock")
                     }
+                
+                SettingsView()
+                    .tabItem {
+                        Label("Login", systemImage: "person.circle")
+                    }
             }
         }
     }
 }
 
 #Preview {
-    ContentView().environmentObject(ShoppingRecordStore())
+    ContentView()
 }
