@@ -8,156 +8,184 @@
 import SwiftUI
 
 struct HomeView: View {
-    
     @EnvironmentObject var store: ShoppingRecordStore
+
     @State private var itemName: String = ""
     @State private var selectedDate: Date = Date()
     @State private var selectedCategory: String = "帳單"
     let expenseTypes = ["帳單", "購物", "電話費", "交通", "飲食", "娛樂"]
-    @State private var selectedType: String = "帳單"
     @State private var amount: String = ""
-    @StateObject var locationmanager = LocationManager()
+    @StateObject var locationmanager = LocationManager()  // 假設你有此class
     @State private var locationNote: String = ""
     @State private var isEditlocation: Bool = false
+
     var body: some View {
         NavigationView {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Text("支出類別：")
-                        .font(.headline)
-                    
-                    Menu {
-                        ForEach(expenseTypes, id: \.self) { category in
-                            Button(action: {
-                                selectedCategory = category
-                            }) {
-                                Text(category)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    // 類別選擇
+                    HStack {
+                        Text("支出類別：")
+                            .font(.headline)
+
+                        Menu {
+                            ForEach(expenseTypes, id: \.self) { category in
+                                Button(action: {
+                                    selectedCategory = category
+                                }) {
+                                    Text(category)
+                                }
                             }
+                        } label: {
+                            HStack {
+                                Text(selectedCategory)
+                                    .foregroundColor(.blue)
+                                Image(systemName: "chevron.down")
+                                    .foregroundColor(.blue)
+                            }
+                            .padding(.horizontal)
+                            .padding(.vertical, 6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray, lineWidth: 1)
+                            )
                         }
-                    } label: {
-                        HStack {
-                            Text(selectedCategory)
-                                .foregroundColor(.blue)
-                            Image(systemName: "chevron.down")
-                                .foregroundColor(.blue)
-                        }
-                        .padding(.horizontal)
-                        .padding(.vertical, 6)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray, lineWidth: 1)
-                        )
                     }
-                }
-                
-                Text("內容：")
-                    .font(.headline)
-                
-                TextField("例如：電費、晚餐牛肉麵", text: $itemName)
-                    .textFieldStyle(.roundedBorder)
-                Text("金額：")
-                    .font(.headline)
-                
-                TextField("例如：250", text: $amount)
-                    .keyboardType(.decimalPad)
-                    .textFieldStyle(.roundedBorder)
-                
-                Text("地點: ")
-                    .font(.headline)
-                TextField("目前地點", text: $locationNote, onEditingChanged: { editing in
-                    isEditlocation = editing
-                })
-                    .textFieldStyle(.roundedBorder)
-                    .onReceive(locationmanager.$placeName) { newPlace in
-                            // 只有當 locationNote 是空的才自動填入（避免覆蓋使用者手動修改）
+
+                    // 內容與金額輸入
+                    Group {
+                        Text("內容：")
+                            .font(.headline)
+
+                        TextField("例如：電費、晚餐牛肉麵", text: $itemName)
+                            .textFieldStyle(.roundedBorder)
+
+                        Text("金額：")
+                            .font(.headline)
+
+                        TextField("例如：250", text: $amount)
+                            .keyboardType(.decimalPad)
+                            .textFieldStyle(.roundedBorder)
+                    }
+
+                    // 地點輸入
+                    Group {
+                        Text("地點:")
+                            .font(.headline)
+
+                        TextField("目前地點", text: $locationNote, onEditingChanged: { editing in
+                            isEditlocation = editing
+                        })
+                        .textFieldStyle(.roundedBorder)
+                        .onReceive(locationmanager.$placeName) { newPlace in
                             if locationNote.isEmpty {
                                 locationNote = newPlace
                             }
                         }
-                    .onAppear {
-                        if locationNote.isEmpty {
-                            locationNote = locationmanager.placeName
+                        .onAppear {
+                            if locationNote.isEmpty {
+                                locationNote = locationmanager.placeName
+                            }
                         }
                     }
-                
-                Text("選擇日期：")
-                    .font(.headline)
-                
-                DatePicker("", selection: $selectedDate, displayedComponents: [.date])
-                    .datePickerStyle(.compact)
-                
-                Button(action: {
-                    if let amountValue = Double(amount),
-                       !itemName.trimmingCharacters(in: .whitespaces).isEmpty {
-                        store.addRecord(name: itemName, date: selectedDate, category: selectedCategory, amount: amountValue, location: locationNote)
-                        
-                            itemName = "" // 清空輸入欄
-                            amount = ""
-    //                        selectedDate = Date() // 回到今天
-                            locationNote = ""
-                        
-                            locationNote = locationmanager.placeName
-                            
-                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                        
+
+                    // 日期選擇
+                    Group {
+                        Text("選擇日期：")
+                            .font(.headline)
+
+                        DatePicker("", selection: $selectedDate, displayedComponents: [.date])
+                            .datePickerStyle(.compact)
                     }
-                }) {
-                    Text("新增紀錄")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-                
-                Divider()
-                
-                Text("支出項目")
-                    .font(.headline)
-                
-                List {
-                    //                    ForEach(store.records) { record in
-                    //                        HStack {
-                    //                            Text(record.name)
-                    //                            Spacer()
-                    //                            Text(formattedDate(record.date))
-                    //                                .foregroundColor(.gray)
-                    //                                .font(.subheadline)
-                    //                        }
-                    //                    }
-                    ForEach(groupedRecords(for: selectedDate), id: \.key) { category, items in
-                        Section(header: Text("📂 \(category)")) {
-                            ForEach(items) { record in
-                                HStack {
-                                    Text("🛒 \(record.name)")
-                                    Spacer()
-                                    
-                                    Text("💰 NT$\(String(format: "%.0f", record.amount))")
-                                        .foregroundStyle(.gray)
-                                    
-                                    Text("📍 \(record.location)")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
+
+                    // 新增按鈕
+                    Button(action: {
+                        guard let amountValue = Double(amount),
+                              !itemName.trimmingCharacters(in: .whitespaces).isEmpty else {
+                            return
+                        }
+
+                        let newRecord = ShoppingRecord(
+                            id: nil,
+                            name: itemName,
+                            date: selectedDate,
+                            category: selectedCategory,
+                            amount: amountValue,
+                            location: locationNote
+                        )
+
+                        store.addRecord(newRecord) { error in
+                            if let error = error {
+                                print("❌ 新增失敗: \(error.localizedDescription)")
+                            } else {
+                                // 新增成功，清空欄位
+                                itemName = ""
+                                amount = ""
+                                locationNote = locationmanager.placeName
+                                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                            }
+                        }
+                    }) {
+                        Text("新增紀錄")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+
+                    Divider()
+
+                    // 顯示紀錄
+                    Text("支出項目")
+                        .font(.headline)
+
+                    if groupedRecords(for: selectedDate).isEmpty {
+                        Text("尚無紀錄")
+                            .foregroundColor(.gray)
+                            .padding(.top, 20)
+                    } else {
+                        ForEach(groupedRecords(for: selectedDate), id: \.key) { entry in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("📂 \(entry.key)")
+                                    .font(.headline)
+                                    .padding(.vertical, 4)
+                                    .padding(.horizontal)
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(8)
+
+                                ForEach(entry.value) { record in
+                                    HStack {
+                                        Text("🛒 \(record.name)")
+                                        Spacer()
+                                        VStack(alignment: .trailing) {
+                                            Text("💰 NT$\(String(format: "%.0f", record.amount))")
+                                                .foregroundColor(.gray)
+                                            Text("📍 \(record.location)")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                    .padding()
+                                    .background(Color.white)
+                                    .cornerRadius(10)
+                                    .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
                                 }
                             }
                         }
                     }
                 }
+                .padding()
             }
-            .padding()
             .navigationTitle("每日紀錄")
         }
         .hideKeyboardOnTap()
     }
-    
-    //    func formattedDate(_ date: Date) -> String {
-    //        let formatter = DateFormatter()
-    //        formatter.dateFormat = "yyyy/MM/dd"
-    //        return formatter.string(from: date)
-    //    }
+
     func groupedRecords(for date: Date) -> [(key: String, value: [ShoppingRecord])] {
-        let todayRecords = store.records(for: date)
-        let grouped = Dictionary(grouping: todayRecords, by: { $0.category })
+        let calendar = Calendar.current
+        let filtered = store.records.filter { calendar.isDate($0.date, inSameDayAs: date) }
+        let grouped = Dictionary(grouping: filtered, by: { $0.category })
         return grouped.sorted { $0.key < $1.key }
     }
 }
@@ -172,5 +200,5 @@ extension View {
 }
 
 #Preview {
-    HomeView().environmentObject(ShoppingRecordStore())
+    HomeView()
 }
