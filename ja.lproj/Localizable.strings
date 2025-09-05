@@ -1,0 +1,56 @@
+//
+//  Localizable.strings
+//  Money
+//
+//  Created by OLIVER LIAO on 2025/08/31.
+//
+
+
+// 建立一個 Localizable.strings 檔案
+
+"AddRecordTitle" = "記録を追加";
+"Category" = "カテゴリー";
+"Content" = "内容";
+"ExpenseExample" = "例：電気代、夕食の牛肉麺";
+"Amount" = "金額";
+"AmountExample" = "例：250";
+"Place" = "場所";
+"PlaceExample" = "現在の場所";
+"Date" = "日付";
+"Cancel" = "キャンセル";
+"Save" = "保存";
+"SaveFailed" = "保存失敗";
+"帳單" = "請求書";
+"購物" = "ショッピング";
+"電話費" = "電話代";
+"交通" = "交通";
+"飲食" = "食事";
+"娛樂" = "娯楽";
+"HomeTab" = "ホーム";
+"HistoryTab" = "履歴";
+"LoginTab" = "設定";
+"NoRecords" = "現在支出記録はありません";
+"DailyRecords" = "毎日の記録";
+"帳單" = "請求書";
+"購物" = "ショッピング";
+"電話費" = "電話代";
+"交通" = "交通";
+"飲食" = "食事";
+"娛樂" = "娯楽";
+"RecordsForDay" = "の記録";
+"MonthYearFormat" = "yyyy年 M月";
+"DateFormat" = "yyyy/MM/dd";
+"RegisterAccount" = "アカウント登録";
+"Login" = "ログイン";
+"Email" = "Email";
+"Password" = "パスワード";
+"Register" = "登録";
+"AlreadyAccount" = "すでにアカウントをお持ちですか？ログイン";
+"NoAccount" = "アカウントをお持ちでないですか？登録";
+"User" = "ユーザー";
+"Nickname" = "ニックネーム";
+"UpdateName" = "名前を更新";
+"UpdateFailed" = "更新失敗";
+"PersonalInfo" = "個人情報";
+"Logout" = "ログアウト";
+"Settings" = "設定";

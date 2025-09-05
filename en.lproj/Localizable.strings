@@ -1,0 +1,51 @@
+//
+//  Localizable.strings
+//  Money
+//
+//  Created by OLIVER LIAO on 2025/08/31.
+//
+
+
+// 建立一個 Localizable.strings 檔案
+
+"AddRecordTitle" = "Add Record";
+"Category" = "Category";
+"Content" = "Content";
+"ExpenseExample" = "e.g., Electricity, Dinner";
+"Amount" = "Amount";
+"AmountExample" = "e.g., 250";
+"Place" = "Location";
+"PlaceExample" = "Current location";
+"Date" = "Date";
+"Cancel" = "Cancel";
+"Save" = "Save";
+"SaveFailed" = "Save failed";
+"帳單" = "Bill";
+"購物" = "Shopping";
+"電話費" = "Phone";
+"交通" = "Transport";
+"飲食" = "Food";
+"娛樂" = "Entertainment";
+"HomeTab" = "Home";
+"HistoryTab" = "History";
+"LoginTab" = "Settings";
+"NoRecords" = "No records yet";
+"DailyRecords" = "Daily Records";
+"RecordsForDay" = " Records";
+"MonthYearFormat" = "MMM yyyy";
+"DateFormat" = "yyyy/MM/dd";
+"RegisterAccount" = "Register Account";
+"Login" = "Login";
+"Email" = "Email";
+"Password" = "Password";
+"Register" = "Register";
+"AlreadyAccount" = "Already have an account? Login";
+"NoAccount" = "No account? Register";
+"User" = "User";
+"Nickname" = "Nickname";
+"UpdateName" = "Update Name";
+"UpdateFailed" = "Update Failed";
+"PersonalInfo" = "Personal Info";
+"Logout" = "Logout";
+"Settings" = "Settings";
+

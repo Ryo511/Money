@@ -12,15 +12,16 @@ struct LoginView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @State private var email = ""
     @State private var password = ""
+    @State private var displayName = "" // ✅ 新增暱稱欄位
     @State private var isRegistering = false
 
     var body: some View {
         VStack(spacing: 20) {
-            Text(isRegistering ? "註冊帳號" : "登入")
+            Text(isRegistering ? NSLocalizedString("RegisterAccount", comment: "註冊帳號") : NSLocalizedString("Login", comment: "登入"))
                 .font(.largeTitle)
                 .bold()
 
-            TextField("Email", text: $email)
+            TextField(NSLocalizedString("Email", comment: "Email"), text: $email)
                 .keyboardType(.emailAddress)
                 .textContentType(.emailAddress)
                 .autocapitalization(.none)
@@ -28,20 +29,28 @@ struct LoginView: View {
                 .background(Color(.secondarySystemBackground))
                 .cornerRadius(8)
 
-            SecureField("密碼", text: $password)
+            SecureField(NSLocalizedString("Password", comment: "密碼"), text: $password)
                 .textContentType(.password)
                 .padding()
                 .background(Color(.secondarySystemBackground))
                 .cornerRadius(8)
 
+            // ✅ 註冊模式才顯示暱稱欄位
+            if isRegistering {
+                TextField(NSLocalizedString("Nickname", comment: "暱稱"), text: $displayName)
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(8)
+            }
+
             Button(action: {
                 if isRegistering {
-                    authViewModel.register(email: email, password: password)
+                    authViewModel.register(email: email, password: password, displayName: displayName) // ✅ 傳入暱稱
                 } else {
                     authViewModel.login(email: email, password: password)
                 }
             }) {
-                Text(isRegistering ? "註冊" : "登入")
+                Text(isRegistering ? NSLocalizedString("Register", comment: "註冊") : NSLocalizedString("Login", comment: "登入"))
                     .foregroundColor(.white)
                     .padding()
                     .frame(maxWidth: .infinity)
@@ -59,13 +68,13 @@ struct LoginView: View {
             Button(action: {
                 isRegistering.toggle()
             }) {
-                Text(isRegistering ? "已有帳號？請登入" : "沒有帳號？註冊")
+                Text(isRegistering ? NSLocalizedString("AlreadyAccount", comment: "已有帳號？請登入") : NSLocalizedString("NoAccount", comment: "沒有帳號？註冊"))
                     .font(.footnote)
                     .foregroundColor(.blue)
             }
             
             if let user = authViewModel.user {
-                Text("👤 \(user.displayName ?? "使用者")")
+                Text("👤 \(user.displayName ?? NSLocalizedString("User", comment: "使用者"))")
                 Text("📧 \(user.email ?? "")")
             }
         }
@@ -80,14 +89,14 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section {
-                TextField("暱稱", text: $newName)
-                Button("更新名稱") {
+                TextField(NSLocalizedString("Nickname", comment: "暱稱"), text: $newName)
+                Button(NSLocalizedString("UpdateName", comment: "更新名稱")) {
                     if let user = Auth.auth().currentUser {
                         let changeRequest = user.createProfileChangeRequest()
                         changeRequest.displayName = newName
                         changeRequest.commitChanges { error in
                             if let error = error {
-                                print("更新失敗：\(error.localizedDescription)")
+                                print("\(NSLocalizedString("UpdateFailed", comment: "更新失敗"))：\(error.localizedDescription)")
                             } else {
                                 authViewModel.user = Auth.auth().currentUser
                             }
@@ -95,17 +104,17 @@ struct SettingsView: View {
                     }
                 }
             } header: {
-                Text("個人資訊")
+                Text(NSLocalizedString("PersonalInfo", comment: "個人資訊"))
             }
 
             Section {
-                Button("登出") {
+                Button(NSLocalizedString("Logout", comment: "登出")) {
                     authViewModel.logout()
                 }
                 .foregroundColor(.red)
             }
         }
-        .navigationTitle("設定")
+        .navigationTitle(NSLocalizedString("Settings", comment: "設定"))
         .onAppear {
             newName = Auth.auth().currentUser?.displayName ?? ""
         }
@@ -116,15 +125,15 @@ struct AppView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
 
     var body: some View {
-        Group {
+        SwiftUI.Group {
             if authViewModel.user != nil {
-                ContentView() // ✅ 這是你 app 的主頁面，登入後會看到
+                ContentView() // 登入後的主頁面
             } else {
                 LoginView()
             }
         }
         .onAppear {
-            authViewModel.listenToAuthState() // 確保 user 狀態及時更新
+            authViewModel.listenToAuthState()
         }
     }
 }

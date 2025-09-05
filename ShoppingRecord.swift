@@ -16,4 +16,7 @@ struct ShoppingRecordd: Identifiable, Codable {
     var category: String
     var amount: Double
     var location: String
+    var paidBy: String
+    var paidByName: String
+    var sharedWith: [String]
 }

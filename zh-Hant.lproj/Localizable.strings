@@ -1,0 +1,50 @@
+//
+//  Localizable.strings
+//  Money
+//
+//  Created by OLIVER LIAO on 2025/08/31.
+//
+
+
+// 建立一個 Localizable.strings 檔案
+
+"AddRecordTitle" = "新增紀錄";
+"Category" = "支出類別";
+"Content" = "內容";
+"ExpenseExample" = "例如：電費、晚餐牛肉麵";
+"Amount" = "金額";
+"AmountExample" = "例如：250";
+"Place" = "地點";
+"PlaceExample" = "目前地點";
+"Date" = "日期";
+"Cancel" = "取消";
+"Save" = "儲存";
+"SaveFailed" = "新增失敗";
+"帳單" = "帳單";
+"購物" = "購物";
+"電話費" = "電話費";
+"交通" = "交通";
+"飲食" = "飲食";
+"娛樂" = "娛樂";
+"HomeTab" = "首頁";
+"HistoryTab" = "歷史";
+"LoginTab" = "設定";
+"NoRecords" = "目前沒有支出紀錄";
+"DailyRecords" = "每日紀錄";
+"RecordsForDay" = "的紀錄";
+"MonthYearFormat" = "yyyy年 M月";
+"DateFormat" = "yyyy/MM/dd";
+"RegisterAccount" = "註冊帳號";
+"Login" = "登入";
+"Email" = "Email";
+"Password" = "密碼";
+"Register" = "註冊";
+"AlreadyAccount" = "已有帳號？請登入";
+"NoAccount" = "沒有帳號？註冊";
+"User" = "使用者";
+"Nickname" = "暱稱";
+"UpdateName" = "更新名稱";
+"UpdateFailed" = "更新失敗";
+"PersonalInfo" = "個人資訊";
+"Logout" = "登出";
+"Settings" = "設定";
