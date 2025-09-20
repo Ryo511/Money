@@ -26,9 +26,6 @@
 "交通" = "Transport";
 "飲食" = "Food";
 "娛樂" = "Entertainment";
-"HomeTab" = "Home";
-"HistoryTab" = "History";
-"LoginTab" = "Settings";
 "NoRecords" = "No records yet";
 "DailyRecords" = "Daily Records";
 "RecordsForDay" = " Records";
@@ -47,5 +44,5 @@
 "UpdateFailed" = "Update Failed";
 "PersonalInfo" = "Personal Info";
 "Logout" = "Logout";
-"Settings" = "Settings";
+
 

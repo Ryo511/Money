@@ -20,9 +20,30 @@ struct HistoryView: View {
         VStack(spacing: 16) {
             
             // 月份標題
-            Text(monthYearString(from: selectedDate))
-                .font(.title2)
-                .bold()
+//            Text(monthYearString(from: selectedDate))
+//                .font(.title2)
+//                .bold()
+            
+            HStack {
+                Button(action: { changeMonth(by: -1) }) {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                }
+                
+                Spacer()
+                
+                Text(monthYearString(from: selectedDate))
+                    .font(.title2)
+                    .bold()
+                
+                Spacer()
+                
+                Button(action: { changeMonth(by: 1) }) {
+                    Image(systemName: "chevron.right")
+                        .font(.title2)
+                }
+            }
+            .padding(.horizontal)
             
             // 半圓日期條
             ScrollView(.horizontal, showsIndicators: false) {
@@ -129,7 +150,9 @@ struct HistoryView: View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                     }
-                    .onDelete(perform: delete)
+                    .onDelete { indexSet in
+                        delete(at: indexSet)
+                    }
                 }
                 .listStyle(PlainListStyle())
             }
@@ -140,12 +163,19 @@ struct HistoryView: View {
     
     // MARK: - 刪除方法
     func delete(at offsets: IndexSet) {
-        let records = filteredRecords(for: selectedDate)
+        let recordsForDay = filteredRecords(for: selectedDate)
         for index in offsets {
-            let record = records[index]
-            store.delete(record)
+            let record = recordsForDay[index]
+            store.deleteRecord(record)
         }
     }
+    
+    // MARK: - 月份切換
+        func changeMonth(by value: Int) {
+            if let newDate = calendar.date(byAdding: .month, value: value, to: selectedDate) {
+                selectedDate = newDate
+            }
+        }
     
     // MARK: - Helper functions
     func daysInMonth(for date: Date) -> [Date?] {
@@ -253,4 +283,5 @@ struct PieChartView: View {
 
 #Preview {
     HistoryView()
+        .environmentObject(ShoppingRecordStore())
 }

@@ -26,9 +26,8 @@
 "交通" = "交通";
 "飲食" = "飲食";
 "娛樂" = "娛樂";
-"HomeTab" = "首頁";
-"HistoryTab" = "歷史";
-"LoginTab" = "設定";
+"Home" = "首頁";
+"History" = "紀錄";
 "NoRecords" = "目前沒有支出紀錄";
 "DailyRecords" = "每日紀錄";
 "RecordsForDay" = "的紀錄";
@@ -47,4 +46,5 @@
 "UpdateFailed" = "更新失敗";
 "PersonalInfo" = "個人資訊";
 "Logout" = "登出";
-"Settings" = "設定";
+"Setting" = "設定";
+"Group" = "群組";

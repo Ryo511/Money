@@ -8,13 +8,26 @@ import FirebaseAuth
 import FirebaseFirestore
 
 class AuthViewModel: ObservableObject {
-    @Published var user: User?
+    @Published var user: User? {
+            didSet {
+                // 當使用者變動時，發出通知
+                NotificationCenter.default.post(name: .userDidChange, object: user)
+            }
+        }
     @Published var errorMessage = ""
 
     private let db = Firestore.firestore()
+    private var authStateHandle: AuthStateDidChangeListenerHandle?
 
     init() {
         listenToAuthState()
+    }
+
+    deinit {
+        if let handle = authStateHandle {
+            Auth.auth().removeStateDidChangeListener(handle)
+            authStateHandle = nil
+        }
     }
 
     // =======================
@@ -76,7 +89,13 @@ class AuthViewModel: ObservableObject {
     // MARK: - 監聽 Auth 狀態
     // =======================
     func listenToAuthState() {
-        Auth.auth().addStateDidChangeListener { [weak self] _, user in
+        // 防止重複註冊監聽
+        if let handle = authStateHandle {
+            Auth.auth().removeStateDidChangeListener(handle)
+            authStateHandle = nil
+        }
+
+        authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             self?.user = user
         }
     }
@@ -114,4 +133,8 @@ class AuthViewModel: ObservableObject {
             }
         }
     }
+}
+
+extension Notification.Name {
+    static let userDidChange = Notification.Name("userDidChange")
 }

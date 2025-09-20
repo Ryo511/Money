@@ -26,9 +26,9 @@
 "交通" = "交通";
 "飲食" = "食事";
 "娛樂" = "娯楽";
-"HomeTab" = "ホーム";
-"HistoryTab" = "履歴";
-"LoginTab" = "設定";
+"Home" = "ホーム";
+"History" = "履歴";
+"Login" = "登録";
 "NoRecords" = "現在支出記録はありません";
 "DailyRecords" = "毎日の記録";
 "帳單" = "請求書";
@@ -53,4 +53,6 @@
 "UpdateFailed" = "更新失敗";
 "PersonalInfo" = "個人情報";
 "Logout" = "ログアウト";
-"Settings" = "設定";
+"Setting" = "設定";
+"Group" = "グールプ";
+

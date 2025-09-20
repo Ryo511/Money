@@ -27,6 +27,9 @@ struct AddRecordView: View {
     @State private var locationNote: String = ""
     @State private var isEditlocation: Bool = false
     
+    @FocusState private var focusedField: Field?
+    enum Field { case name, amount, location }
+    
     var body: some View {
         NavigationView {
             Form {
@@ -40,17 +43,41 @@ struct AddRecordView: View {
                 
                 Section(header: Text(NSLocalizedString("Content", comment: "內容"))) {
                     TextField(NSLocalizedString("ExpenseExample", comment: "例如內容"), text: $itemName)
+                        .textContentType(.none) // 內容自由輸入
+                        .textInputAutocapitalization(.sentences)
+                        .autocorrectionDisabled(false)
+                        .submitLabel(.next)
+                        .focused($focusedField, equals: .name)
+                        .onSubmit { focusedField = .amount }
                 }
                 
                 Section(header: Text(NSLocalizedString("Amount", comment: "金額"))) {
                     TextField(NSLocalizedString("AmountExample", comment: "例如金額"), text: $amount)
                         .keyboardType(.decimalPad)
+                        .textContentType(.none)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
+                        .focused($focusedField, equals: .amount)
+                        .toolbar {
+                            ToolbarItemGroup(placement: .keyboard) {
+                                Spacer()
+                                Button(NSLocalizedString("Done", comment: "完成")) {
+                                    focusedField = .location
+                                }
+                            }
+                        }
                 }
                 
                 Section(header: Text(NSLocalizedString("Place", comment: "地點"))) {
                     TextField(NSLocalizedString("PlaceExample", comment: "目前地點"), text: $locationNote, onEditingChanged: { editing in
                         isEditlocation = editing
                     })
+                    .textContentType(.fullStreetAddress) // 或 .locationName 視需求
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled(false)
+                    .submitLabel(.done)
+                    .focused($focusedField, equals: .location)
+                    .onSubmit { focusedField = nil }
                     .onReceive(locationmanager.$placeName) { newPlace in
                         if locationNote.isEmpty {
                             locationNote = newPlace
@@ -82,6 +109,10 @@ struct AddRecordView: View {
                     .disabled(itemName.trimmingCharacters(in: .whitespaces).isEmpty || Double(amount) == nil)
                 }
             }
+            .onAppear {
+                // 預設先聚焦到名稱
+                focusedField = .name
+            }
         }
     }
     
@@ -100,12 +131,8 @@ struct AddRecordView: View {
             location: locationNote
         )
         
-        store.addRecord(newRecord) { error in
-            if let error = error {
-                print("❌ \(NSLocalizedString("SaveFailed", comment: "新增失敗")): \(error.localizedDescription)")
-            } else {
-                dismiss()
-            }
-        }
+        store.addRecord(newRecord)
+        dismiss()
     }
 }
+

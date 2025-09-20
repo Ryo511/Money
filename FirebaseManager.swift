@@ -6,9 +6,10 @@
 //
 
 import FirebaseFirestore
+import FirebaseAuth
 
 // =======================
-// MARK: - 單人支出 (原本的)
+// MARK: - 單人支出
 // =======================
 struct ShoppingRecord: Codable, Identifiable {
     @DocumentID var id: String?
@@ -49,47 +50,52 @@ struct Expense: Codable, Identifiable {
 class FirebaseManager {
     static let shared = FirebaseManager()
     private let db = Firestore.firestore()
+    var database: Firestore {
+        return db
+    }
     
     private init() {}
     
-    // -----------------------
-    // 單人支出紀錄 (原本的)
-    // -----------------------
-    func addRecord(_ record: ShoppingRecord, completion: ((Error?) -> Void)? = nil) {
+    // MARK: - 單人支出 (依 uid 區分)
+    func addRecord(_ record: ShoppingRecord, forUser uid: String, completion: ((Error?) -> Void)? = nil) {
         do {
-            _ = try db.collection("shoppingRecords").addDocument(from: record, completion: completion)
+            _ = try db.collection("users")
+                .document(uid)
+                .collection("shoppingRecords")
+                .addDocument(from: record, completion: completion)
         } catch {
             completion?(error)
         }
     }
     
-    func fetchAllRecords(completion: @escaping ([ShoppingRecord]) -> Void) {
-        db.collection("shoppingRecords").order(by: "date", descending: true).getDocuments { snapshot, error in
-            if let documents = snapshot?.documents {
-                let records = documents.compactMap {
-                    try? $0.data(as: ShoppingRecord.self)
+    func fetchRecords(forUser uid: String, completion: @escaping ([ShoppingRecord]) -> Void) {
+        db.collection("users")
+            .document(uid)
+            .collection("shoppingRecords")
+            .order(by: "date", descending: true)
+            .addSnapshotListener { snapshot, error in
+                if let documents = snapshot?.documents {
+                    let records = documents.compactMap { try? $0.data(as: ShoppingRecord.self) }
+                    completion(records)
+                } else {
+                    completion([])
                 }
-                completion(records)
-            } else {
-                completion([])
             }
-        }
     }
     
-    func deleteRecord(_ record: ShoppingRecord, completion: ((Error?) -> Void)? = nil) {
+    func deleteRecord(_ record: ShoppingRecord, forUser uid: String, completion: ((Error?) -> Void)? = nil) {
         guard let id = record.id else {
             completion?(NSError(domain: "MissingID", code: 0, userInfo: nil))
             return
         }
-        db.collection("shoppingRecords").document(id).delete(completion: completion)
+        db.collection("users")
+            .document(uid)
+            .collection("shoppingRecords")
+            .document(id)
+            .delete(completion: completion)
     }
     
-    
-    // -----------------------
-    // 群組 & 分帳紀錄
-    // -----------------------
-    
-    /// 建立群組（members 會一併寫入）
+    // MARK: - 群組 & 分帳紀錄（保持原本功能不變）
     func createGroup(_ group: ExpenseGroup, completion: ((Error?) -> Void)? = nil) {
         do {
             _ = try db.collection("groups").addDocument(from: group, completion: completion)
@@ -98,13 +104,11 @@ class FirebaseManager {
         }
     }
     
-    /// 更新/覆寫群組成員（如果 group.id 為 nil，會回傳錯誤）
     func updateGroupMembers(group: ExpenseGroup, completion: ((Error?) -> Void)? = nil) {
         guard let groupId = group.id else {
             completion?(NSError(domain: "MissingGroupID", code: 0, userInfo: [NSLocalizedDescriptionKey: "Group id is missing"]))
             return
         }
-        // 儲存 name + members（以 merge:true 保留其他欄位）
         let membersData = group.members.map { ["id": $0.id, "name": $0.name] }
         db.collection("groups").document(groupId).setData([
             "name": group.name,
@@ -112,13 +116,10 @@ class FirebaseManager {
         ], merge: true, completion: completion)
     }
     
-    /// 取得所有群組
     func fetchGroups(completion: @escaping ([ExpenseGroup]) -> Void) {
         db.collection("groups").getDocuments { snapshot, error in
             if let documents = snapshot?.documents {
-                let groups = documents.compactMap {
-                    try? $0.data(as: ExpenseGroup.self)
-                }
+                let groups = documents.compactMap { try? $0.data(as: ExpenseGroup.self) }
                 completion(groups)
             } else {
                 completion([])
@@ -126,7 +127,6 @@ class FirebaseManager {
         }
     }
     
-    /// 在群組內新增支出
     func addExpense(to groupId: String, expense: Expense, completion: ((Error?) -> Void)? = nil) {
         do {
             _ = try db.collection("groups").document(groupId).collection("expenses").addDocument(from: expense, completion: completion)
@@ -135,21 +135,19 @@ class FirebaseManager {
         }
     }
     
-    /// 取得群組內支出
     func fetchExpenses(for groupId: String, completion: @escaping ([Expense]) -> Void) {
-        db.collection("groups").document(groupId).collection("expenses").order(by: "date", descending: true).getDocuments { snapshot, error in
-            if let documents = snapshot?.documents {
-                let expenses = documents.compactMap {
-                    try? $0.data(as: Expense.self)
+        db.collection("groups").document(groupId).collection("expenses")
+            .order(by: "date", descending: true)
+            .getDocuments { snapshot, error in
+                if let documents = snapshot?.documents {
+                    let expenses = documents.compactMap { try? $0.data(as: Expense.self) }
+                    completion(expenses)
+                } else {
+                    completion([])
                 }
-                completion(expenses)
-            } else {
-                completion([])
             }
-        }
     }
     
-    /// 刪除群組支出
     func deleteExpense(groupId: String, expense: Expense, completion: ((Error?) -> Void)? = nil) {
         guard let id = expense.id else {
             completion?(NSError(domain: "MissingID", code: 0, userInfo: nil))
@@ -157,14 +155,8 @@ class FirebaseManager {
         }
         db.collection("groups").document(groupId).collection("expenses").document(id).delete(completion: completion)
     }
-}
-
-// =======================
-// MARK: - Extension: 分帳計算
-// =======================
-extension FirebaseManager {
     
-    /// 最終差額模式：計算每個成員最後的 balance
+    // MARK: - 分帳計算
     func calculateBalances(for groupId: String, completion: @escaping ([String: Double]) -> Void) {
         let groupRef = db.collection("groups").document(groupId)
         
@@ -211,7 +203,6 @@ extension FirebaseManager {
         }
     }
     
-    /// 詳細模式：列出逐筆「誰欠誰多少」
     func calculateDetailedBalances(for groupId: String, completion: @escaping ([(from: String, to: String, amount: Double)]) -> Void) {
         let groupRef = db.collection("groups").document(groupId)
         
@@ -259,13 +250,8 @@ extension FirebaseManager {
             }
         }
     }
-}
-
-// =======================
-// MARK: - 群組刪除
-// =======================
-extension FirebaseManager {
-    /// 刪除群組（包含底下的支出資料）
+    
+    // MARK: - 群組刪除
     func deleteGroup(_ group: ExpenseGroup, completion: ((Error?) -> Void)? = nil) {
         guard let groupId = group.id else {
             completion?(NSError(domain: "MissingGroupID", code: 0, userInfo: nil))
@@ -274,15 +260,12 @@ extension FirebaseManager {
         
         let groupRef = db.collection("groups").document(groupId)
         
-        // 先刪除群組內所有支出
         groupRef.collection("expenses").getDocuments { snapshot, error in
             if let docs = snapshot?.documents {
                 for doc in docs {
                     doc.reference.delete()
                 }
             }
-            
-            // 最後刪除群組本身
             groupRef.delete(completion: completion)
         }
     }

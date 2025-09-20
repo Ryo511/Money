@@ -26,10 +26,10 @@ struct ContentView: View {
                 .tag(2)
 
             SettingsView()
-                .tabItem { Label(NSLocalizedString("Login", comment: "設定"), systemImage: "person.circle") }
+                .tabItem { Label(NSLocalizedString("Setting", comment: "設定"), systemImage: "person.circle") }
                 .tag(3)
         }
-        .onChange(of: selectedTab) { newValue in
+        .onChange(of: selectedTab) { _, newValue in
             // 點 Tab 可以做額外操作，例如回到群組列表初始頁
             if newValue == 2 {
                 NotificationCenter.default.post(name: .groupTabTapped, object: nil)
