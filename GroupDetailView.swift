@@ -18,6 +18,9 @@ struct GroupDetailView: View {
     @State private var showingAllBalances = false
     @State private var friends: [AppUser] = [] // 好友列表
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
+    
+    // Listener
+    @State private var expensesListener: ListenerRegistration?
 
     var body: some View {
         VStack {
@@ -115,14 +118,15 @@ struct GroupDetailView: View {
             }
         }
         .onAppear {
-            fetchExpenses()
-            calculateBalances()
+            startListeningExpenses()
             loadFriends()
+        }
+        .onDisappear {
+            expensesListener?.remove()
         }
         .sheet(isPresented: $showingAddExpense) {
             AddExpenseView(group: group) { _ in
-                fetchExpenses()
-                calculateBalances()
+                // 這裡不需要手動 fetch，因為 listener 會自動更新
             }
         }
         .sheet(isPresented: $showingAddMember) {
@@ -137,10 +141,24 @@ struct GroupDetailView: View {
         group.members.first { $0.id == uid }?.name ?? "未知"
     }
 
-    func fetchExpenses() {
-        FirebaseManager.shared.fetchExpenses(for: group.id ?? "") { fetched in
-            self.expenses = fetched
-        }
+    private func startListeningExpenses() {
+        guard let groupId = group.id else { return }
+
+        expensesListener = FirebaseManager.shared.db
+            .collection("groups")
+            .document(groupId)
+            .collection("expenses")
+            .order(by: "date", descending: true)
+            .addSnapshotListener { snapshot, error in
+                if let error = error {
+                    print("❌ 讀取群組支出失敗：\(error.localizedDescription)")
+                    return
+                }
+                self.expenses = snapshot?.documents.compactMap { try? $0.data(as: Expense.self) } ?? []
+                
+                // 更新分帳
+                calculateBalances()
+            }
     }
 
     func calculateBalances() {
@@ -152,12 +170,10 @@ struct GroupDetailView: View {
 
     private func deleteExpense(_ expense: Expense) {
         FirebaseManager.shared.deleteExpense(groupId: group.id ?? "", expense: expense) { error in
-            if error == nil {
-                self.expenses.removeAll { $0.id == expense.id }
-                self.calculateBalances()
-            } else {
-                print("刪除失敗：\(error!.localizedDescription)")
+            if let error = error {
+                print("刪除失敗：\(error.localizedDescription)")
             }
+            // 不需要手動刷新 expenses，listener 會自動更新
         }
     }
 

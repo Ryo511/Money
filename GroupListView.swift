@@ -6,11 +6,16 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct GroupListView: View {
     @State private var groups: [ExpenseGroup] = []
     @State private var showingAddGroup = false
     @State private var showingAddFriend = false
+    
+    var currentUserUid: String? {
+        Auth.auth().currentUser?.uid
+    }
 
     var body: some View {
         NavigationView {
@@ -59,12 +64,17 @@ struct GroupListView: View {
             }
             // AddGroupView Sheet
             .sheet(isPresented: $showingAddGroup) {
-                AddGroupView { newGroup in
-                    FirebaseManager.shared.createGroup(newGroup) { _ in
-                        fetchGroups()
+                if let uid = currentUserUid {
+                    AddGroupView { newGroup in
+                        FirebaseManager.shared.createGroup(newGroup, forUser: uid) { _ in
+                            // UI 自動更新，無需手動 fetch
+                        }
                     }
+                } else {
+                    Text("使用者未登入")
                 }
             }
+
             // AddFriendView Sheet
             .sheet(isPresented: $showingAddFriend) {
                 AddFriendView()
@@ -77,22 +87,18 @@ struct GroupListView: View {
 
     // 取得群組列表
     func fetchGroups() {
-        FirebaseManager.shared.fetchGroups { fetched in
+        guard let uid = currentUserUid else { return }
+        FirebaseManager.shared.listenGroups(forUser: uid) { fetched in
             self.groups = fetched
         }
     }
 
     // 刪除群組
     func deleteGroup(at offsets: IndexSet) {
+        guard let uid = currentUserUid else { return }
         offsets.forEach { index in
             let group = groups[index]
-            FirebaseManager.shared.deleteGroup(group) { error in
-                if let error = error {
-                    print("刪除群組失敗: \(error.localizedDescription)")
-                } else {
-                    print("刪除群組成功")
-                }
-            }
+            FirebaseManager.shared.deleteGroup(group, forUser: uid)
         }
         groups.remove(atOffsets: offsets)
     }

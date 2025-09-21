@@ -29,34 +29,33 @@ struct AddExpenseView: View {
                 }
                 
                 Section {
-                    Button("新增支出") {
+                    Button(action: {
                         guard let amt = Double(amount), !title.isEmpty else { return }
                         guard let currentUid = Auth.auth().currentUser?.uid else { return }
-
+                        
                         let expense = Expense(
                             title: title,
                             amount: amt,
-                            paidBy: currentUid, // 自動設定付款者
+                            paidBy: currentUid,
                             splitMethod: "equal",
                             customSplit: nil,
                             date: Date()
                         )
                         
                         FirebaseManager.shared.addExpense(to: group.id ?? "", expense: expense) { error in
-                            if error == nil {
+                            if let error = error {
+                                print("新增支出失敗: \(error.localizedDescription)")
+                            } else {
                                 onComplete(expense)
                                 dismiss()
-                            } else {
-                                print("新增支出失敗: \(error!.localizedDescription)")
                             }
                         }
+                    }) {
+                        Text("新增支出")
+                            .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
             }
-            .navigationTitle("新增支出")
-            .navigationBarItems(trailing: Button("取消") {
-                dismiss()
-            })
         }
     }
 }

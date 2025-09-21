@@ -16,32 +16,22 @@ class ShoppingRecordStore: ObservableObject {
     private let firebase = FirebaseManager.shared
     private var listener: ListenerRegistration?
     
-    init() {
-        NotificationCenter.default.addObserver(self, selector: #selector(userDidChange), name: .userDidChange, object: nil)
-    }
-    
     var currentUserID: String? {
         return Auth.auth().currentUser?.uid
     }
     
+    init() {
+        NotificationCenter.default.addObserver(self, selector: #selector(userDidChange), name: .userDidChange, object: nil)
+        fetchRecords()
+    }
+    
     func fetchRecords() {
         guard let uid = currentUserID else { return }
-        
-        listener = firebase.database
-            .collection("users")
-            .document(uid)
-            .collection("shoppingRecords")
-            .order(by: "date", descending: true)
-            .addSnapshotListener { [weak self] snapshot, error in
-                guard let self = self else { return }
-                if let error = error {
-                    print("❌ 讀取失敗：\(error.localizedDescription)")
-                    return
-                }
-                self.records = snapshot?.documents.compactMap { doc -> ShoppingRecord? in
-                    try? doc.data(as: ShoppingRecord.self)
-                } ?? []
-            }
+        // 先移除舊 listener
+        listener?.remove()
+        listener = firebase.listenRecords(forUser: uid) { [weak self] fetched in
+            self?.records = fetched
+        }
     }
     
     func addRecord(_ record: ShoppingRecord) {
@@ -67,16 +57,12 @@ class ShoppingRecordStore: ObservableObject {
         return records.filter { calendar.isDate($0.date, inSameDayAs: date) }
     }
     
-    deinit {
-        listener?.remove()
+    @objc func userDidChange() {
+        // 使用者變動時重新抓資料
+        fetchRecords()
     }
     
-    @objc func userDidChange() {
-        // 移除舊 listener
+    deinit {
         listener?.remove()
-        records = [] // 清空舊資料
-        
-        // 重新抓資料
-        fetchRecords()
     }
 }
