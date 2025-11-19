@@ -38,7 +38,7 @@ class ShoppingRecordStore: ObservableObject {
         guard let uid = currentUserID else { return }
         firebase.addRecord(record, forUser: uid) { error in
             if let error = error {
-                print("❌ 新增失敗：\(error.localizedDescription)")
+                print("新增失敗：\(error.localizedDescription)")
             }
         }
     }
@@ -47,7 +47,7 @@ class ShoppingRecordStore: ObservableObject {
         guard let uid = currentUserID else { return }
         firebase.deleteRecord(record, forUser: uid) { error in
             if let error = error {
-                print("❌ 刪除失敗：\(error.localizedDescription)")
+                print("刪除失敗：\(error.localizedDescription)")
             }
         }
     }
