@@ -14,7 +14,7 @@ struct LoginView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @State private var email = ""
     @State private var password = ""
-    @State private var displayName = "" // ✅ 新增暱稱欄位
+    @State private var displayName = "" // 新增暱稱欄位
     @State private var isRegistering = false
     
     var body: some View {
@@ -37,7 +37,7 @@ struct LoginView: View {
                 .background(Color(.secondarySystemBackground))
                 .cornerRadius(8)
             
-            // ✅ 註冊模式才顯示暱稱欄位
+            // 註冊模式才顯示暱稱欄位
             if isRegistering {
                 TextField(NSLocalizedString("Nickname", comment: "暱稱"), text: $displayName)
                     .padding()
@@ -47,7 +47,7 @@ struct LoginView: View {
             
             Button(action: {
                 if isRegistering {
-                    authViewModel.register(email: email, password: password, displayName: displayName) // ✅ 傳入暱稱
+                    authViewModel.register(email: email, password: password, displayName: displayName) //傳入暱稱
                 } else {
                     authViewModel.login(email: email, password: password)
                 }
@@ -215,7 +215,7 @@ struct AppView: View {
     var body: some View {
         Group {
             if authViewModel.user != nil {
-                ContentView() // ✅ 登入後的主頁面
+                ContentView() // 登入後的主頁面
             } else {
                 LoginView()
             }
