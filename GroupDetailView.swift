@@ -10,24 +10,23 @@ import FirebaseAuth
 import FirebaseFirestore
 
 struct GroupDetailView: View {
-    @State var group: ExpenseGroup
-    @State private var expenses: [Expense] = []
-    @State private var balances: [String: Double] = [:]
+    @StateObject private var viewModel: GroupDetailViewModel
+
     @State private var showingAddExpense = false
     @State private var showingAddMember = false
     @State private var showingAllBalances = false
-    @State private var friends: [AppUser] = [] // 好友列表
-    @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
-    
-    // Listener
-    @State private var expensesListener: ListenerRegistration?
+
+    // creat init -> group -> ViewModel
+    init(group: ExpenseGroup) {
+        _viewModel = StateObject(wrappedValue: GroupDetailViewModel(group: group))
+    }
 
     var body: some View {
         VStack {
             // 成員列表
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack {
-                    ForEach(group.members) { member in
+                    ForEach(viewModel.group.members) { member in
                         VStack {
                             Circle()
                                 .fill(Color.blue.opacity(0.3))
@@ -46,12 +45,12 @@ struct GroupDetailView: View {
 
             // 支出列表
             List {
-                ForEach(expenses) { expense in
+                ForEach(viewModel.expenses) { expense in
                     HStack {
                         VStack(alignment: .leading) {
                             Text(expense.title)
                                 .bold()
-                            Text("付款者: \(memberName(for: expense.paidBy))")
+                            Text("付款者: \(viewModel.memberName(for: expense.paidBy))")
                                 .font(.caption)
                         }
                         Spacer()
@@ -60,7 +59,7 @@ struct GroupDetailView: View {
                     }
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
-                            deleteExpense(expense)
+                            viewModel.deleteExpense(expense)
                         } label: {
                             Label("刪除", systemImage: "trash")
                         }
@@ -71,7 +70,7 @@ struct GroupDetailView: View {
             Divider()
 
             // 只顯示「我的應付/應收」摘要卡片
-            if let myBalance = balances[currentUserId] {
+            if let myBalance = viewModel.myBalance {
                 VStack {
                     Text("我的分帳結果")
                         .font(.headline)
@@ -100,7 +99,7 @@ struct GroupDetailView: View {
 
             Spacer()
         }
-        .navigationTitle(group.name)
+        .navigationTitle(viewModel.group.name)
         .toolbar {
             HStack(spacing: 16) {
                 Button(action: { showingAddExpense = true }) {
@@ -117,85 +116,24 @@ struct GroupDetailView: View {
                 }
             }
         }
-        .onAppear {
-            startListeningExpenses()
-            loadFriends()
-        }
         .onDisappear {
-            expensesListener?.remove()
+            viewModel.stopListening()
         }
         .sheet(isPresented: $showingAddExpense) {
-            AddExpenseView(group: group) { _ in
+            AddExpenseView(group: viewModel.group) { _ in
                 // 這裡不需要手動 fetch，因為 listener 會自動更新
             }
         }
         .sheet(isPresented: $showingAddMember) {
-            AddMemberView(group: $group, friends: friends)
+            AddMemberView(group: $viewModel.group, friends: viewModel.friends)
         }
         .sheet(isPresented: $showingAllBalances) {
-            AllBalancesView(group: group, balances: balances)
+            AllBalancesView(group: viewModel.group, balances: viewModel.balances)
         }
-    }
-
-    func memberName(for uid: String) -> String {
-        group.members.first { $0.id == uid }?.name ?? "未知"
-    }
-
-    private func startListeningExpenses() {
-        guard let groupId = group.id else { return }
-
-        expensesListener = FirebaseManager.shared.db
-            .collection("groups")
-            .document(groupId)
-            .collection("expenses")
-            .order(by: "date", descending: true)
-            .addSnapshotListener { snapshot, error in
-                if let error = error {
-                    print("❌ 讀取群組支出失敗：\(error.localizedDescription)")
-                    return
-                }
-                self.expenses = snapshot?.documents.compactMap { try? $0.data(as: Expense.self) } ?? []
-                
-                // 更新分帳
-                calculateBalances()
-            }
-    }
-
-    func calculateBalances() {
-        guard let groupId = group.id else { return }
-        FirebaseManager.shared.calculateBalances(for: groupId) { result in
-            self.balances = result
-        }
-    }
-
-    private func deleteExpense(_ expense: Expense) {
-        FirebaseManager.shared.deleteExpense(groupId: group.id ?? "", expense: expense) { error in
-            if let error = error {
-                print("刪除失敗：\(error.localizedDescription)")
-            }
-            // 不需要手動刷新 expenses，listener 會自動更新
-        }
-    }
-
-    private func loadFriends() {
-        guard let currentUid = Auth.auth().currentUser?.uid else { return }
-        let db = Firestore.firestore()
-        db.collection("users").document(currentUid).collection("friends")
-            .getDocuments { snapshot, _ in
-                if let docs = snapshot?.documents {
-                    friends = docs.map { doc in
-                        AppUser(
-                            id: doc.documentID,
-                            name: doc["name"] as? String ?? "",
-                            email: doc["email"] as? String ?? ""
-                        )
-                    }
-                }
-            }
     }
 }
 
-// 顯示所有成員的分帳結果（額外 sheet）
+// 顯示所有成員的分帳結果（這段可以沿用你原本的）
 struct AllBalancesView: View {
     var group: ExpenseGroup
     var balances: [String: Double]
